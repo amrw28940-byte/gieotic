@@ -273,7 +273,7 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-10 text-xs font-semibold uppercase tracking-widest text-gray-400">
             <a href="#" className="hover:text-amber-400 transition-colors duration-300">مشاريعنا</a>
 <a href="/about" className="hover:text-amber-400 transition-colors duration-300">من نحن</a>
-            <a href="#" className="hover:text-amber-400 transition-colors duration-300">اتصل بنا</a>
+<a href="/contact" className="hover:text-amber-400 transition-colors duration-300">اتصل بنا</a>
             <a href="#" className="hover:text-amber-400 transition-colors duration-300">الرئيسية</a>
           </nav>
           <button className="border border-amber-500/30 hover:border-amber-400 bg-amber-500/5 text-amber-400 hover:bg-amber-400 hover:text-black px-4 md:px-6 py-2 md:py-2.5 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all duration-300 backdrop-blur-sm">
