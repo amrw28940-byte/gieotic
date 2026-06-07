@@ -349,7 +349,7 @@ export default function Home() {
           {/* ==================== ✨ السكشن الخامس: مشاريعنا ==================== */}
           <section className="w-[100vw] h-full flex flex-col items-center justify-center px-[4vw] shrink-0 font-cairo perspective-[1200px] pt-12 md:pt-0">
             <div className="text-center mb-4 md:mb-8 select-none">
-              <h2 className="text-2xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-500 mb-1 tracking-wide">
+              <h2 className="text-2xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400 mb-1 tracking-wide">
                 معرض مشاريعنا الإبداعية
               </h2>
               <p className="text-[10px] md:text-sm text-amber-400 font-bold tracking-widest uppercase">
@@ -397,7 +397,8 @@ export default function Home() {
           </section>
           
           {/* ==================== 🟣 السكشن الرابع: خدماتنا الرقمية ==================== */}
-          <section className="w-[100vw] h-full flex flex-col items-center justify-center px-[4vw] md:px-[6vw] shrink-0 font-cairo perspective-[1200px] pt-12 md:pt-28">
+          {/* 🛠️ تم التحديث هنا: ضبط المساحة العلوية pt-20 وتحويل الحاوية على الموبايل لقائمة سكرول متطابقة تماماً مع معرض المشاريع */}
+          <section className="w-[100vw] h-full flex flex-col items-center justify-center px-[4vw] md:px-[6vw] shrink-0 font-cairo perspective-[1200px] pt-20 md:pt-28">
             <div className="text-center mb-4 md:mb-6 select-none">
               <h2 className="text-2xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400 mb-1 tracking-wide">
                 خدماتنا الرقمية المتكاملة
@@ -407,7 +408,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 w-full max-w-5xl px-2" style={{ direction: "rtl" }}>
+            <div className="max-h-[65vh] md:max-h-none overflow-y-auto md:overflow-visible grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 w-full max-w-5xl px-2" style={{ direction: "rtl" }}>
               {ourServicesInfo.map((service) => (
                 <div
                   key={service.id}
