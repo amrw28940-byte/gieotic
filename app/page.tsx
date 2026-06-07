@@ -1,6 +1,15 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 
+// تعريف أنواع البيانات القادمة من الـ API لضمان استقرار التايب سكريبت
+interface ApiResponse {
+  data: {
+    page: {
+      title: string;
+      content: string;
+    };
+  };
+}
 
 export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -9,10 +18,45 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // المتغيرات الخاصة ببيانات الووردبريس
+  const [pageTitle, setPageTitle] = useState("");
+  const [pageContent, setPageContent] = useState("");
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 2000);
+    // 🌐 جلب البيانات من ووردبريس عبر متغير البيئة الذي قمت بإنشائه
+    const fetchWordPressData = async () => {
+      const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "https://gieotic.com/graphql";
+      
+      const query = `
+        query GetHomePage {
+          page(id: "/home/", idType: URI) {
+            title
+            content
+          }
+        }
+      `;
 
+      try {
+        const res = await fetch(wpApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+        
+        const json = (await res.json()) as ApiResponse;
+        if (json?.data?.page) {
+          setPageTitle(json.data.page.title);
+          setPageContent(json.data.page.content);
+        }
+      } catch (error) {
+        console.error("خطأ أثناء جلب البيانات من ووردبريس:", error);
+      } finally {
+        // إيقاف اللودر بعد انتهاء التحميل (سواء نجح أو فشل)
+        setIsLoading(false);
+      }
+    };
+
+    fetchWordPressData();
 
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({
@@ -21,34 +65,28 @@ export default function Home() {
       });
     };
 
-
     const handleScroll = () => {
       if (!containerRef.current) return;
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       const currentScroll = window.scrollY;
-     
+      
       const scrollPercent = maxScroll > 0 ? currentScroll / maxScroll : 0;
       setScrollYProgress(scrollPercent);
-
 
       const totalWidthToScroll = window.innerWidth * 5;
       const moveAmount = -totalWidthToScroll + (scrollPercent * totalWidthToScroll);
       setScrollX(moveAmount);
     };
 
-
     handleScroll();
-
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("scroll", handleScroll);
     return () => {
-      clearTimeout(timer);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
 
   const services = [
     "تصميم مواقع الكترونية",
@@ -60,29 +98,30 @@ export default function Home() {
     "تصميم فيديوهات AI"
   ];
 
-
-  // تم تحديث مسارات الصور هنا بناءً على الملفات الجديدة المرفوعة مع الحفاظ التام على العناوين العربي
+  // 🛠 حل مشكلة الحروف العربي: قمنا بترميز أسماء الملفات باستخدام (URL Encoding) لكي يقبلها المتصفح بدون مشاكل ByteString
   const ourServicesInfo = [
-    { id: 1, title: "تصميم مواقع الكترونية", image: "/Website design.webp", color: "hover:border-amber-400/40" },
+    { id: 1, title: "تصميم مواقع الكترونية", image: `/${encodeURIComponent("تصميم مواقع الكترونية")}.webp`, color: "hover:border-amber-400/40" },
     { id: 2, title: "تحسين محركات البحث SEO", image: "/seo.webp", color: "hover:border-cyan-400/40" },
     { id: 3, title: "تحسين الظهور في الذكاء الاصطناعي (GEO)", image: "/geo.jpg", color: "hover:border-purple-400/40" },
-    { id: 4, title: "كتابة المحتوي", image: "/Content writing.webp", color: "hover:border-emerald-400/40" },
-    { id: 5, title: "إدارة صفحات السوشيال ميديا", image: "/Social media management.jpg", color: "hover:border-rose-400/40" },
-    { id: 6, title: "تصميم فيديوهات AI", image: "/Design videos ai.webp", color: "hover:border-pink-400/40" },
+    { id: 4, title: "كتابة المحتوي", image: `/${encodeURIComponent("كتابة المحتوي")}.webp`, color: "hover:border-emerald-400/40" },
+    { id: 5, title: "إدارة صفحات السوشيال ميديا", image: `/${encodeURIComponent("ادارة مواقع السوشيال ميديا")}.jpg`, color: "hover:border-rose-400/40" },
+    { id: 6, title: "تصميم فيديوهات AI", image: `/${encodeURIComponent("تصميم فيديوهات ai")}.webp`, color: "hover:border-pink-400/40" },
   ];
 
-
-  // مصفوفة المشاريع
- const myProjects = [ { id: 1, title: "شركة كوبرا بلاست", category: "تصميم موقع تعريفى", url: "https://cobra-plast.com/", image: "/تعديل-300x300.jpg" }, { id: 2, title: "سطحة الرياض", category: "موقع خدمات نقل وسحب", url: "https://sathaway.com/", image: "/سطحة-الرياض-1.webp" }, { id: 3, title: "riseupbh", category: "قريباً", url: "", image: "" }, { id: 4, title: "مشروع رقم ٤", category: "قريباً", url: "", image: "" }, { id: 5, title: "مشروع رقم ٥", category: "قريباً", url: "", image: "" }, ];
-
+  const myProjects = [ 
+    { id: 1, title: "شركة كوبرا بلاست", category: "تصميم موقع تعريفى", url: "https://cobra-plast.com/", image: `/${encodeURIComponent("تعديل-300x300")}.jpg` }, 
+    { id: 2, title: "سطحة الرياض", category: "موقع خدمات نقل وسحب", url: "https://sathaway.com/", image: `/${encodeURIComponent("سطحة-الرياض-1")}.webp` }, 
+    { id: 3, title: "riseupbh", category: "قريباً", url: "", image: "" }, 
+    { id: 4, title: "مشروع رقم ٤", category: "قريباً", url: "", image: "" }, 
+    { id: 5, title: "مشروع رقم ٥", category: "قريباً", url: "", image: "" }, 
+  ];
 
   return (
     <main className="h-[600vh] bg-[#020306] text-white relative selection:bg-amber-500 selection:text-black font-sans overflow-x-hidden">
-     
+      
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
         .font-cairo { font-family: 'Cairo', sans-serif; }
-
 
         @keyframes moonFlash {
           0%, 100% {
@@ -115,7 +154,6 @@ export default function Home() {
           100% { transform: rotate(360deg) translateX(35px) rotate(-360deg); }
         }
 
-
         @keyframes container3DReveal {
           0% {
             transform: translateZ(-300px) rotateX(20deg) scale(0.6);
@@ -140,12 +178,10 @@ export default function Home() {
           }
         }
 
-
         @keyframes verticalMarquee {
           0% { transform: translateY(-50%); }
           100% { transform: translateY(0%); }
         }
-
 
         .animate-moon { animation: moonFlash 5s infinite ease-in-out; }
         .animate-glow { animation: glowFlash 5s infinite ease-in-out; }
@@ -158,7 +194,6 @@ export default function Home() {
           animation: container3DReveal 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-
         .animate-vertical-marquee {
           animation: verticalMarquee 25s linear infinite;
         }
@@ -168,7 +203,6 @@ export default function Home() {
           transform: rotate(180deg);
         }
       `}</style>
-
 
       {/* ==================== ⏳ شاشة الـ LOADER ==================== */}
       <div className={`fixed inset-0 bg-[#020306] z-[100] flex flex-col items-center justify-center font-cairo transition-all duration-700 ease-in-out ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -182,7 +216,6 @@ export default function Home() {
         </h2>
         <p className="text-xs text-gray-500 mt-2 tracking-widest uppercase">جاري تهيئة خيالك الرقمي...</p>
       </div>
-
 
       {/* ==================== 🌌 طبقات الفضاء الـ 3D PARALLAX ==================== */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -199,7 +232,6 @@ export default function Home() {
           }}
         />
 
-
         <div
           className="absolute inset-0 opacity-80 transition-transform duration-300 ease-out"
           style={{ transform: `translate3d(${mousePos.x * 0.5}px, ${mousePos.y * 0.5}px, 0)` }}
@@ -207,18 +239,16 @@ export default function Home() {
           <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(1.5px 1.5px at 20px 30px, #00f0ff, transparent), radial-gradient(1.5px 1.5px at 75px 130px, #00f0ff, transparent), radial-gradient(1px 1px at 150px 60px, #00f0ff, transparent), radial-gradient(2px 2px at 220px 180px, #00f0ff, transparent), radial-gradient(1.5px 1.5px at 310px 240px, #00f0ff, transparent), radial-gradient(1px 1px at 400px 350px, #00f0ff, transparent), radial-gradient(2px 2px at 480px 90px, #00f0ff, transparent)`, backgroundSize: "180px 180px" }} />
         </div>
 
-
         <div
           className="absolute inset-[-5%] opacity-90 animate-[pulse_2.5s_infinite] transition-transform duration-200 ease-out"
           style={{ transform: `translate3d(${mousePos.x * 0.9}px, ${mousePos.y * 0.9}px, 0)` }}
         >
           <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(2px 2px at 40px 80px, #00f0ff, transparent), radial-gradient(2.5px 2.5px at 110px 40px, #00f0ff, transparent), radial-gradient(2px 2px at 190px 270px, #00f0ff, transparent), radial-gradient(3px 3px at 290px 150px, #00f0ff, transparent), radial-gradient(2px 2px at 380px 50px, #00f0ff, transparent), radial-gradient(2.5px 2.5px at 450px 290px, #00f0ff, transparent)`, backgroundSize: "350px 350px" }} />
         </div>
-       
+        
         <div className="absolute top-[15%] right-[5%] w-[600px] h-[600px] bg-cyan-950/15 blur-[140px] rounded-full" />
         <div className="absolute bottom-[5%] left-[2%] w-[500px] h-[500px] bg-blue-950/15 blur-[160px] rounded-full" />
       </div>
-
 
       {/* 🌙 القمر المضيء */}
       <div
@@ -231,7 +261,6 @@ export default function Home() {
         <div className="absolute inset-[-20px] rounded-full bg-white blur-[35px] opacity-0 animate-glow" />
         <div className="absolute inset-0 rounded-full border border-white/10 animate-moon" />
       </div>
-
 
       {/* 🪐 كوكب المشتري */}
       <div
@@ -246,43 +275,31 @@ export default function Home() {
         </div>
       </div>
 
-
-      {/* 🧭 الهيدر الثابت المعكوس بدقة */}
+      {/* 🧭 الهيدر الثابت */}
       <header className="fixed top-0 left-0 w-full z-50 bg-[#020306]/40 backdrop-blur-md border-b border-b-white/5 font-cairo">
         <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
-          
-          {/* زر Launch Project في أقصى اليسار */}
-          <button className="border border-amber-500/30 hover:border-amber-400 bg-amber-500/5 text-amber-400 hover:bg-amber-400 hover:text-black px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 backdrop-blur-sm">
-            Launch Project
-          </button>
-
-
-          {/* روابط النافبار المتوسطة */}
+          <div className="cursor-pointer group">
+            <span className="text-2xl font-black tracking-[0.2em] bg-gradient-to-r from-white via-amber-200 to-amber-400 bg-clip-text text-transparent group-hover:from-amber-400 group-hover:to-white transition-all duration-500">
+              GIOTEC
+            </span>
+          </div>
           <nav className="hidden md:flex items-center gap-10 text-xs font-semibold uppercase tracking-widest text-gray-400">
             <a href="#" className="hover:text-amber-400 transition-colors duration-300">مشاريعنا</a>
             <a href="#" className="hover:text-amber-400 transition-colors duration-300">من نحن</a>
             <a href="#" className="hover:text-amber-400 transition-colors duration-300">اتصل بنا</a>
             <a href="#" className="hover:text-amber-400 transition-colors duration-300">الرئيسية</a>
           </nav>
-
-
-          {/* اسم الموقع GIOTEC في أقصى اليمين */}
-          <div className="cursor-pointer group">
-            <span className="text-2xl font-black tracking-[0.2em] bg-gradient-to-r from-white via-amber-200 to-amber-400 bg-clip-text text-transparent group-hover:from-amber-400 group-hover:to-white transition-all duration-500">
-              GIOTEC
-            </span>
-          </div>
-
-
+          <button className="border border-amber-500/30 hover:border-amber-400 bg-amber-500/5 text-amber-400 hover:bg-amber-400 hover:text-black px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 backdrop-blur-sm">
+            Launch Project
+          </button>
         </div>
       </header>
-
 
       {/* 📱 الأيقونات الجانبية */}
       <aside className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-4">
         {[
-          { name: "FB", link: "#" },
-          { name: "TW", link: "#" },
+          { name: "Fc", link: "#" },
+          { name: "yu", link: "#" },
           { name: "IG", link: "#" },
           { name: "LN", link: "#" }
         ].map((item, index) => (
@@ -293,20 +310,17 @@ export default function Home() {
         ))}
       </aside>
 
-
       {/* 🔄 الحاوية الأفقية المتحركة بعرض إجمالي 600vw لتسع الـ 6 سكاشن كاملة */}
       <div ref={containerRef} className="fixed top-0 left-0 h-screen flex overflow-hidden z-20" style={{ width: "600vw" }}>
         <div
           className="flex h-full w-full items-center"
           style={{ transform: `translate3d(${scrollX}px, 0, 0)`, transition: "transform 0.25s cubic-bezier(0.2, 1, 0.3, 1)" }}
         >
-         
-          {/* ==================== 🛠 السكشن السابع والأخير: اتصل بنا (منقسم لجنبين تماماً باستخدام الـ Grid التلقائي) ==================== */}
-          <section className="w-[100vw] h-full grid grid-cols-1 md:grid-cols-2 items-center justify-center px-[8vw] gap-[5vw] shrink-0 font-cairo perspective-[1200px] pt-20">
-            
-            {/* الجزء الأيمن: تواصل معنا يمين الشاشة */}
+          
+          {/* ==================== 🛠 السكشن السادس والأخير: اتصل بنا ==================== */}
+          <section className="w-[100vw] h-full flex flex-col md:flex-row items-center justify-center px-[8vw] gap-[5vw] shrink-0 font-cairo perspective-[1200px] pt-24 md:pt-28">
             <div 
-              className="w-full text-right select-none md:pr-10"
+              className="w-full md:w-1/2 text-right select-none"
               style={{ direction: "rtl", transform: `rotateY(${mousePos.x * 0.2}deg) rotateX(${-mousePos.y * 0.2}deg)` }}
             >
               <h2 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400 mb-4 tracking-wide drop-shadow-[0_4px_12px_rgba(245,158,11,0.15)]">
@@ -317,14 +331,11 @@ export default function Home() {
               </p>
             </div>
 
-
-            {/* الجزء الأيسر: الـ 3 مستطيلات وزر التأكيد يسار الشاشة */}
             <form 
               onSubmit={(e) => e.preventDefault()} 
-              className="w-full flex flex-col gap-4 max-w-lg md:pl-5 justify-self-start" 
+              className="w-full md:w-1/2 flex flex-col gap-4 max-w-lg" 
               style={{ direction: "rtl", transform: `rotateY(${mousePos.x * 0.15}deg) rotateX(${-mousePos.y * 0.15}deg)` }}
             >
-              {/* مستطيل 1: الاسم بالكامل */}
               <div className="p-4 rounded-xl border border-white/5 bg-[#05070f]/80 backdrop-blur-md focus-within:border-amber-400/40 transition-all duration-300 group shadow-xl flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-gray-500 group-focus-within:text-amber-400 transition-colors">الاسم بالكامل</label>
                 <input 
@@ -334,8 +345,6 @@ export default function Home() {
                 />
               </div>
 
-
-              {/* مستطيل 2: البريد الإلكتروني */}
               <div className="p-4 rounded-xl border border-white/5 bg-[#05070f]/80 backdrop-blur-md focus-within:border-cyan-400/40 transition-all duration-300 group shadow-xl flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-gray-500 group-focus-within:text-cyan-400 transition-colors">البريد الإلكتروني</label>
                 <input 
@@ -345,8 +354,6 @@ export default function Home() {
                 />
               </div>
 
-
-              {/* مستطيل 3: وصف الخدمة كحقل نصي متكامل */}
               <div className="p-4 rounded-xl border border-white/5 bg-[#05070f]/80 backdrop-blur-md focus-within:border-purple-400/40 transition-all duration-300 group shadow-xl flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-gray-500 group-focus-within:text-purple-400 transition-colors">وصف الخدمة المطلوبة</label>
                 <textarea 
@@ -356,8 +363,6 @@ export default function Home() {
                 />
               </div>
 
-
-              {/* زر التأكيد في الأسفل */}
               <div className="w-full mt-2">
                 <button 
                   type="submit"
@@ -368,7 +373,6 @@ export default function Home() {
               </div>
             </form>
           </section>
-
 
           {/* ==================== ✨ السكشن الخامس: مشاريعنا ==================== */}
           <section className="w-[100vw] h-full flex flex-col items-center justify-center px-[4vw] shrink-0 font-cairo perspective-[1200px]">
@@ -381,13 +385,12 @@ export default function Home() {
               </p>
             </div>
 
-
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 w-full max-w-7xl" style={{ direction: "rtl" }}>
               {myProjects.map((project) => (
                 <div
                   key={project.id}
                   className="group relative h-[320px] rounded-2xl border border-white/5 overflow-hidden transition-all duration-500 hover:border-amber-400/50 shadow-2xl flex flex-col justify-end p-4 bg-[#05070f]"
-                  style={{ transform: `rotateY(${project.id * mousePos.x * 0.02}deg) rotateX(${-mousePos.y * 0.12}deg)` }}
+                  style={{ transform: `rotateY(${mousePos.x * 0.12}deg) rotateX(${-mousePos.y * 0.12}deg)` }}
                 >
                   {project.image ? (
                     <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -401,20 +404,18 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] via-transparent to-amber-500/[0.02]" />
                   )}
 
-
                   <div className="absolute inset-0 bg-gradient-to-t from-[#020306] via-[#020306]/70 to-transparent z-10" />
-
 
                   <div className="relative z-20 flex flex-col h-full justify-between items-start">
                     <span className="text-[9px] font-bold text-cyan-400 tracking-wider bg-cyan-400/10 px-2 py-0.5 rounded-md backdrop-blur-sm">
                       {project.category}
                     </span>
-                   
+                    
                     <div className="w-full">
                       <h3 className="text-sm font-black text-white mb-3 group-hover:text-amber-300 transition-colors duration-300">
                         {project.title}
                       </h3>
-                     
+                      
                       {project.url ? (
                         <a
                           href={project.url}
@@ -435,8 +436,8 @@ export default function Home() {
               ))}
             </div>
           </section>
-         
-          {/* ==================== 🟣 السكشن الرابع الجديد: خدماتنا الرقمية ==================== */}
+          
+          {/* ==================== 🟣 السكشن الرابع: خدماتنا الرقمية ==================== */}
           <section className="w-[100vw] h-full flex flex-col items-center justify-center px-[6vw] shrink-0 font-cairo perspective-[1200px] pt-24 md:pt-28">
             <div className="text-center mb-6 select-none">
               <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400 mb-1 tracking-wide">
@@ -446,7 +447,6 @@ export default function Home() {
                 حلول تقنية متطورة مصممة باحترافية لتلبية طموحات مشروعك
               </p>
             </div>
-
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-5xl" style={{ direction: "rtl" }}>
               {ourServicesInfo.map((service) => (
@@ -465,9 +465,7 @@ export default function Home() {
                     </div>
                   )}
 
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#020306] via-[#020306]/70 to-transparent z-10" />
-
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020306] via-[#020306]/60 to-transparent z-10" />
 
                   <div className="relative z-20 w-full">
                     <h3 className="text-lg md:text-xl font-black text-white group-hover:text-amber-300 transition-colors duration-300 tracking-wide">
@@ -479,14 +477,12 @@ export default function Home() {
             </div>
           </section>
 
-
           {/* ==================== 🔵 السكشن الثالث: لماذا تتعامل معنا؟ ==================== */}
           <section className="w-[100vw] h-full flex items-center justify-between shrink-0 font-cairo perspective-[1200px] relative overflow-hidden pt-24 md:pt-28">
-           
             <div className="w-[65px] md:w-[75px] h-full border-r border-white/10 bg-[#06070d]/60 backdrop-blur-xl flex flex-col items-center justify-center overflow-hidden rounded-none shadow-[5px_0_30px_rgba(0,0,0,0.5)] relative shrink-0">
               <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-[#020306] to-transparent z-10 pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-[#020306] to-transparent z-10 pointer-events-none" />
-             
+              
               <div className="flex flex-col animate-vertical-marquee">
                 {[...services, ...services, ...services].map((service, idx) => (
                   <div key={idx} className="flex flex-col items-center justify-center py-6 gap-3 shrink-0">
@@ -499,7 +495,6 @@ export default function Home() {
               </div>
             </div>
 
-
             <div className="flex-1 flex flex-col items-center justify-center h-full px-[6vw]">
               <div className="text-center mb-5 select-none">
                 <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400 mb-1 tracking-wide">
@@ -509,7 +504,6 @@ export default function Home() {
                   بنية برمجية ذكية وهندسة متكاملة تصنع الفارق الرقمي لمشروعك
                 </p>
               </div>
-
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-6xl" style={{ direction: "rtl" }}>
                 <div
@@ -523,7 +517,6 @@ export default function Home() {
                   </p>
                 </div>
 
-
                 <div
                   className="p-4 rounded-xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-md hover:border-cyan-400/40 hover:bg-white/[0.03] transition-all duration-300 group shadow-xl"
                   style={{ transform: `rotateY(${mousePos.x * 0.2}deg) rotateX(${-mousePos.y * 0.2}deg)` }}
@@ -534,7 +527,6 @@ export default function Home() {
                     لا نقوم ببناء كود برمجى صامت، بل ندمج تقنيات الـ SEO والـ GEO المتقدمة لضمان ظهور موقعك الإلكتروني وعملك التجاري في صدارة نتائج البحث.
                   </p>
                 </div>
-
 
                 <div
                   className="p-4 rounded-xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-md hover:border-purple-400/40 hover:bg-white/[0.03] transition-all duration-300 group shadow-xl"
@@ -547,7 +539,6 @@ export default function Home() {
                   </p>
                 </div>
 
-
                 <div
                   className="p-4 rounded-xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-md hover:border-emerald-400/40 hover:bg-white/[0.03] transition-all duration-300 group shadow-xl"
                   style={{ transform: `rotateY(${mousePos.x * 0.2}deg) rotateX(${-mousePos.y * 0.2}deg)` }}
@@ -559,7 +550,6 @@ export default function Home() {
                   </p>
                 </div>
 
-
                 <div
                   className="p-4 rounded-xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-md hover:border-rose-400/40 hover:bg-white/[0.03] transition-all duration-300 group shadow-xl"
                   style={{ transform: `rotateY(${mousePos.x * 0.2}deg) rotateX(${-mousePos.y * 0.2}deg)` }}
@@ -570,7 +560,6 @@ export default function Home() {
                     نهتم بأدق تفاصيل الـ UI/UX؛ نصنع واجهات فريدة تجذب الزائر وتعكس فخامة هويتك البصرية لتجربة تصفح غامرة ومثالية.
                   </p>
                 </div>
-
 
                 <div
                   className="p-4 rounded-xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-md hover:border-pink-400/40 hover:bg-white/[0.03] transition-all duration-300 group shadow-xl"
@@ -584,10 +573,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-
-
           </section>
-
 
           {/* ==================== 🔵 السكشن الثاني: من نحن ==================== */}
           <section className="w-[100vw] h-full flex flex-col md:flex-row items-center justify-center px-[8vw] gap-[6vw] shrink-0 relative perspective-[1000px] font-cairo">
@@ -606,7 +592,6 @@ export default function Home() {
               </p>
             </div>
 
-
             <div className="w-[300px] h-[300px] border border-white/5 bg-white/[0.01] rounded-2xl flex items-center justify-center backdrop-blur-sm shrink-0 shadow-xl relative overflow-hidden">
               <div className="animate-robot flex flex-col items-center justify-center w-full">
                 <img
@@ -619,25 +604,37 @@ export default function Home() {
             </div>
           </section>
 
-
-          {/* ==================== 🔴 السكشن الأول: الرئيسية (تم ضبط حسابه ليبقى ظاهراً في البداية 100%) ==================== */}
+          {/* ==================== 🔴 السكشن الأول: الرئيسية (مربوط بالـ WordPress) ==================== */}
           <section className="w-[100vw] h-full flex flex-col items-center justify-center text-center px-6 shrink-0 select-none pt-12">
-            <span className="text-[10px] uppercase tracking-[0.4em] text-amber-400 font-bold mb-4 bg-amber-400/5 px-4 py-1.5 rounded-full border border-amber-400/10 backdrop-blur-sm animate-pulse">نرسم هويتك البصرية بابداع وااحترافية</span>
-           
+            <span className="text-[10px] uppercase tracking-[0.4em] text-amber-400 font-bold mb-4 bg-amber-400/5 px-4 py-1.5 rounded-full border border-amber-400/10 backdrop-blur-sm animate-pulse">
+              نرسم هويتك البصرية بابداع واحترافية
+            </span>
+            
             <div className="flex flex-col text-white" style={{ textShadow: `0 1px 0 #d9d9d9, 0 2px 0 #bfbfbf, 0 3px 0 #b3b3b3, 0 4px 0 #999999, 0 5px 0 #808080, 0 6px 1px rgba(0,0,0,.15), 0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.25), 0 15px 25px rgba(0,0,0,.2)` }}>
               <h1 className="text-6xl md:text-9xl font-black tracking-widest uppercase mb-4">
-                <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-amber-300 to-amber-500">GIOTEC</span>
+                {/* اسم الصفحة الأساسي أو الافتراضي من ووردبريس */}
+                <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-amber-300 to-amber-500">
+                  {pageTitle || "GIOTEC"}
+                </span>
               </h1>
-              <h2 className="text-2xl md:text-5xl font-extrabold text-white tracking-wide !leading-tight font-sans px-4 max-w-5xl mx-auto" style={{ direction: "rtl" }}>
-                نرسم أحلامك لتكون حقيقة وخيالك ليكون واقع ونبنى لك المستقبل
-              </h2>
+              
+              {/* هنا لو محتاج تعرض المحتوى اللي بتكتبه في ووردبريس بداخل الـ Hero section */}
+              {pageContent ? (
+                <div 
+                  className="text-xl md:text-3xl font-extrabold text-white tracking-wide !leading-tight font-cairo px-4 max-w-5xl mx-auto"
+                  style={{ direction: "rtl" }}
+                  dangerouslySetInnerHTML={{ __html: pageContent }}
+                />
+              ) : (
+                <h2 className="text-2xl md:text-5xl font-extrabold text-white tracking-wide !leading-tight font-sans px-4 max-w-5xl mx-auto" style={{ direction: "rtl" }}>
+                  نرسم أحلامك لتكون حقيقة وخيالك ليكون واقع ونبنى لك المستقبل
+                </h2>
+              )}
             </div>
-
 
             <p className="mt-6 text-amber-100/70 text-base md:text-xl max-w-3xl font-medium tracking-wide backdrop-blur-[0.5px] border-t border-white/5 pt-4 mb-10" style={{ direction: "rtl" }}>
               نحن نبني لك موقع الكتروني احترافي ونضعك في المقدمة
             </p>
-
 
             <div className="flex gap-4">
               <button className="px-8 py-4 rounded-xl font-bold text-black bg-gradient-to-r from-white via-amber-200 to-amber-500 hover:scale-105 transition-all flex items-center gap-2">
@@ -649,10 +646,8 @@ export default function Home() {
             </div>
           </section>
 
-
         </div>
       </div>
-
 
     </main>
   );
